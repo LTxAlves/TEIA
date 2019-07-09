@@ -51,8 +51,10 @@ plt.figure()
 for group in groups:
 	plt.subplot(len(groups), 1, i)
 	plt.plot(values[:, group])
-	plt.title(csv.columns[group], y=0.5, loc='right')
+	plt.title(csv.columns[group])
 	i += 1
+
+plt.subplots_adjust(left=0.125, bottom=0.1, right=0.9, top=0.9, wspace=0.2, hspace=0.5)
 plt.show()
 
 valores = csv.to_numpy()
