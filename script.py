@@ -13,7 +13,7 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 # load data
 def LeCSV(arq):
-    dataset = pd.read_csv(arq,  parse_dates = ['mdct'], index_col=0, usecols=['mdct', 'temp', 'hmdy'])
+    dataset = pd.read_csv(arq,  parse_dates = ['mdct'], index_col=0, usecols=['mdct', 'temp', 'hmdy', 'wdsp'])
     return dataset
 
 def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
@@ -44,7 +44,7 @@ print(csv.shape)
 values = csv.values
 
 # specify columns to plot
-groups = [0, 1]
+groups = [0, 1, 2]
 i = 1
 # plot each column
 plt.figure()
@@ -67,11 +67,11 @@ scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
 scaled = scaler.fit_transform(valores)
 # frame as supervised learning
 n_hours = 1
-n_features = 2
+n_features = 3
 reframed = series_to_supervised(scaled, n_hours, 1)
 #Line for removing one of the last columns.
-#We shall have only one of the 2 last columns, so we predict only one of the attributes
-reframed.drop(reframed.columns[[4]], axis=1, inplace=True)
+#We shall have only one of the 3 last columns, so we predict only one of the attributes
+#reframed.drop(reframed.columns[[3,4]], axis=1, inplace=True)
 print(reframed.shape)
 print(reframed.head(5))
 
@@ -93,26 +93,20 @@ print(train_x.shape, train_y.shape, val_x.shape, val_y.shape)
 
 # design network
 model = Sequential()
-model.add(LSTM(50, input_shape=(train_x.shape[1], train_x.shape[2])))
+model.add(LSTM(10, input_shape=(train_x.shape[1], train_x.shape[2])))
 model.add(Dense(1))
 model.compile(loss='mae', optimizer='adam', metrics=['acc'])
 
 model.summary()
 # fit network
-history = model.fit(train_x, train_y, epochs=50, batch_size=588, validation_data=(val_x, val_y), verbose=2, shuffle=False)
+history = model.fit(train_x, train_y, epochs=10, batch_size=588, validation_data=(val_x, val_y), verbose=2, shuffle=False)
 # plot history
 plt.plot(history.history['loss'], label='train')
 plt.plot(history.history['val_loss'], label='test')
-plt.title('Erro quadrático médio')
+plt.title('Erro Aritmético Médio')
 plt.legend()
 plt.show()
 
-plt.plot(history.history['acc'], label='train')
-plt.plot(history.history['val_acc'], label='test')
-plt.title('Acurácia')
-plt.legend()
-plt.show()
- 
 # make a prediction
 yhat = model.predict(val_x)
 print(yhat.shape)
@@ -136,4 +130,5 @@ print('Test RMSE: %.3f' % rmse)
 plt.plot(inv_yhat[-100:], label='Previsão')
 plt.plot(inv_y[-100:], label='Atual')
 plt.title('Previsão')
+plt.legend()
 plt.show()
