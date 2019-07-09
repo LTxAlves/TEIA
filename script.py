@@ -7,6 +7,9 @@ from keras.layers import Dense, LSTM
 from sklearn import preprocessing
 from sklearn.metrics import mean_squared_error
 from datetime import datetime
+import os
+
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 # load data
 def LeCSV(arq):
