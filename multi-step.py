@@ -74,12 +74,18 @@ def fit_lstm(train, n_lag, n_seq, n_batch, nb_epoch, n_neurons):
     model = Sequential()
     model.add(LSTM(n_neurons, batch_input_shape=(n_batch, X.shape[1], X.shape[2]), stateful=True))
     model.add(Dense(y.shape[1]))
-    model.compile(loss='mean_squared_error', optimizer='adam')
+    model.compile(loss='mean_squared_error', optimizer='adam', metrics=['acc'])
+
+    losses = []
+    accs = []
     # fit network
-    for i in range(nb_epoch):
-        model.fit(X, y, epochs=1, batch_size=n_batch, verbose=0, shuffle=False)
+    while(nb_epoch > 0):
+        history = model.fit(X, y, epochs=1, batch_size=n_batch, verbose=0, shuffle=False)
+        losses.append(history.history['loss'])
+        accs.append(history.history['acc'])
         model.reset_states()
-    return model
+        nb_epoch -= 1
+    return model, losses, accs
 
 # make one forecast with an LSTM,
 def forecast_lstm(model, X, n_batch):
@@ -94,7 +100,7 @@ def forecast_lstm(model, X, n_batch):
 def make_forecasts(model, n_batch, train, test, n_lag, n_seq):
     forecasts = list()
     for i in range(len(test)):
-        X, y = test[i, 0:n_lag], test[i, n_lag:]
+        X = test[i, 0:n_lag]
         # make forecast
         forecast = forecast_lstm(model, X, n_batch)
         # store the forecast
@@ -150,6 +156,8 @@ def plot_forecasts(series, forecasts, n_test):
         pyplot.plot(xaxis, yaxis, color='red')
     custom_lines = [Line2D([0], [0], color='b', lw=1), Line2D([0], [0], color='r', lw=1)]
     pyplot.legend(custom_lines, ['Temperatura Real', 'Previsões'])
+    pyplot.xlabel('Tempo em horas')
+    pyplot.ylabel('Temperatura')
     # show the plot
     pyplot.show()
 
@@ -165,7 +173,7 @@ n_neurons = 1
 # prepare data
 scaler, train, test = prepare_data(series, n_test, n_lag, n_seq)
 # fit model
-model = fit_lstm(train, n_lag, n_seq, n_batch, n_epochs, n_neurons)
+model, losses, accs = fit_lstm(train, n_lag, n_seq, n_batch, n_epochs, n_neurons)
 # make forecasts
 forecasts = make_forecasts(model, n_batch, train, test, n_lag, n_seq)
 # inverse transform forecasts and test
@@ -176,3 +184,15 @@ actual = inverse_transform(series, actual, scaler, n_test+2)
 evaluate_forecasts(actual, forecasts, n_lag, n_seq)
 # plot forecasts
 plot_forecasts(series, forecasts, n_test+2)
+
+pyplot.plot(losses)
+pyplot.title('Erro Quadrático Médio')
+pyplot.xlabel('Época')
+pyplot.ylabel('Erro')
+pyplot.show()
+
+pyplot.plot(accs)
+pyplot.title('Acurácia')
+pyplot.xlabel('Época')
+pyplot.ylabel('Acurácia')
+pyplot.show()
